@@ -228,6 +228,9 @@ struct ChooseMoveStruct
     // to the controller. In a link battle the non-master's gBattleMons[] for the
     // foe is empty, so the move-selection indicator must not compute it locally.
     u8 targetEffectiveness[MAX_MON_MOVES][MAX_BATTLERS_COUNT];
+    // Bit N set = battler N is alive (IsBattlerAlive() on the master). The joiner's
+    // gBattleMons[] is empty, so the target highlight cannot ask IsBattlerAlive().
+    u8 aliveBattlers;
 };
 
 enum
