@@ -4466,6 +4466,14 @@ static void HandleTurnActionSelectionState(void)
                                                             gBattleMons[battler].moves[i],
                                                             gBattleMons[battler].ppBonuses,
                                                             i);
+
+                            // Precompute the type-effectiveness indicator here: this is
+                            // the console that has every battler's data (see
+                            // ChooseMoveStruct::targetEffectiveness).
+                            for (u32 j = 0; j < MAX_BATTLERS_COUNT; j++)
+                                moveInfo.targetEffectiveness[i][j] = (j < gBattlersCount && gBattleMons[battler].moves[i] != MOVE_NONE)
+                                    ? CheckMoveTypeEffectiveness(battler, j, gBattleMons[battler].moves[i])
+                                    : 0;
                         }
 
                         BtlController_EmitChooseMove(battler, B_COMM_TO_CONTROLLER, IsDoubleBattle() != 0, FALSE, &moveInfo);

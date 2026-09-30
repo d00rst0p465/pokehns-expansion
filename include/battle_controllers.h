@@ -223,6 +223,11 @@ struct ChooseMoveStruct
     u16 species;
     enum Type monTypes[3];
     struct ZMoveData zmove;
+    // Type effectiveness of each move against each battler, computed on the
+    // battle master (the only console that has the foe's battle data) and sent
+    // to the controller. In a link battle the non-master's gBattleMons[] for the
+    // foe is empty, so the move-selection indicator must not compute it locally.
+    u8 targetEffectiveness[MAX_MON_MOVES][MAX_BATTLERS_COUNT];
 };
 
 enum
@@ -323,6 +328,7 @@ void BtlController_EmitPrintString(enum BattlerId battler, u32 bufferId, enum St
 void BtlController_EmitPrintSelectionString(enum BattlerId battler, u32 bufferId, enum StringID stringId);
 void BtlController_EmitChooseAction(enum BattlerId battler, u32 bufferId, u8 action, enum Item itemId);
 void BtlController_EmitYesNoBox(enum BattlerId battler, u32 bufferId);
+u32 CheckMoveTypeEffectiveness(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move);
 void BtlController_EmitChooseMove(enum BattlerId battler, u32 bufferId, bool8 isDoubleBattle, bool8 NoPpNumber, struct ChooseMoveStruct *movePpData);
 void BtlController_EmitChooseItem(enum BattlerId battler, u32 bufferId, u8 *battlePartyOrder);
 void BtlController_EmitChoosePokemon(enum BattlerId battler, u32 bufferId, u8 caseId, u8 slotId, u16 abilityId, enum BattlerId battlerPreventingSwitchout, u8 *data);

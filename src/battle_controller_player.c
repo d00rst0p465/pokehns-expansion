@@ -2400,13 +2400,14 @@ static bool32 ShouldShowTypeEffectiveness(u32 targetId)
     return TRUE;
 }
 
-static u32 CheckTypeEffectiveness(enum BattlerId battlerAtk, enum BattlerId battlerDef)
+// Computes the raw effectiveness from the foe's battle data, so only call it on
+// the battle master. The result is sent to the controller in ChooseMoveStruct.
+u32 CheckMoveTypeEffectiveness(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move)
 {
-    struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battlerAtk][4]);
     struct BattleContext ctx = {0};
     ctx.battlerAtk = battlerAtk;
     ctx.battlerDef = battlerDef;
-    ctx.move = moveInfo->moves[gMoveSelectionCursor[battlerAtk]];
+    ctx.move = move;
     ctx.moveType = CheckDynamicMoveType(GetBattlerMon(battlerAtk), ctx.move, battlerAtk, MON_IN_BATTLE);
     ctx.updateFlags = FALSE;
     ctx.abilityAtk = GetBattlerAbility(battlerAtk);
@@ -2416,9 +2417,6 @@ static u32 CheckTypeEffectiveness(enum BattlerId battlerAtk, enum BattlerId batt
 
     uq4_12_t modifier = CalcTypeEffectivenessMultiplier(&ctx);
 
-    if (!ShouldShowTypeEffectiveness(battlerDef))
-        return EFFECTIVENESS_CANNOT_VIEW;
-
     if (modifier == UQ_4_12(0.0))
         return EFFECTIVENESS_NO_EFFECT; // No effect
     else if (modifier <= UQ_4_12(0.5))
@@ -2426,6 +2424,18 @@ static u32 CheckTypeEffectiveness(enum BattlerId battlerAtk, enum BattlerId batt
     else if (modifier >= UQ_4_12(2.0))
         return EFFECTIVENESS_SUPER_EFFECTIVE; // Super effective
     return EFFECTIVENESS_NORMAL; // Normal effectiveness
+}
+
+static u32 CheckTypeEffectiveness(enum BattlerId battlerAtk, enum BattlerId battlerDef)
+{
+    struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battlerAtk][4]);
+
+    if (!ShouldShowTypeEffectiveness(battlerDef))
+        return EFFECTIVENESS_CANNOT_VIEW;
+
+    // Use the value computed by the battle master. Recomputing here is wrong for
+    // the non-master console of a link battle (empty gBattleMons[] for the foe).
+    return moveInfo->targetEffectiveness[gMoveSelectionCursor[battlerAtk]][battlerDef];
 }
 
 static u32 CheckTargetTypeEffectiveness(enum BattlerId battler)
