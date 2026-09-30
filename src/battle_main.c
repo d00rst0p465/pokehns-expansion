@@ -4457,6 +4457,10 @@ static void HandleTurnActionSelectionState(void)
                         moveInfo.monTypes[0] = gBattleMons[battler].types[0];
                         moveInfo.monTypes[1] = gBattleMons[battler].types[1];
                         moveInfo.monTypes[2] = gBattleMons[battler].types[2];
+                        moveInfo.aliveBattlers = 0;
+                        for (u32 b = 0; b < gBattlersCount; b++)
+                            if (IsBattlerAlive(b))
+                                moveInfo.aliveBattlers |= 1u << b;
 
                         for (i = 0; i < MAX_MON_MOVES; i++)
                         {

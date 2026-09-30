@@ -646,9 +646,13 @@ void HandleInputShowTargets(enum BattlerId battler)
     }
 }
 
-static void TryShowAsTarget(enum BattlerId battler)
+static void TryShowAsTarget(enum BattlerId attacker, enum BattlerId battler)
 {
-    if (IsBattlerAlive(battler))
+    // Use the alive mask sent by the battle master: on the joiner of a link
+    // battle gBattleMons[] is empty, so IsBattlerAlive() is always FALSE there.
+    struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[attacker][4]);
+
+    if (battler < gBattlersCount && (moveInfo->aliveBattlers & (1u << battler)))
     {
         DoBounceEffect(battler, BOUNCE_HEALTHBOX, 15, 1);
         gSprites[gBattlerSpriteIds[battler]].callback = SpriteCB_ShowAsMoveTarget;
@@ -735,16 +739,16 @@ void HandleInputChooseMove(enum BattlerId battler)
                 if (moveTarget == TARGET_ALL_BATTLERS || moveTarget == TARGET_FIELD)
                 {
                     for (enum BattlerId i = 0; i < gBattlersCount; i++)
-                        TryShowAsTarget(i);
+                        TryShowAsTarget(battler, i);
 
                     canSelectTarget = 3;
                 }
                 else if (IsSpreadMove(moveTarget) || moveTarget == TARGET_OPPONENTS_FIELD || moveTarget == TARGET_USER_AND_ALLY)
                 {
-                    TryShowAsTarget(gMultiUsePlayerCursor);
-                    TryShowAsTarget(BATTLE_PARTNER(gMultiUsePlayerCursor));
+                    TryShowAsTarget(battler, gMultiUsePlayerCursor);
+                    TryShowAsTarget(battler, BATTLE_PARTNER(gMultiUsePlayerCursor));
                     if (moveTarget == TARGET_FOES_AND_ALLY)
-                        TryShowAsTarget(BATTLE_PARTNER(battler));
+                        TryShowAsTarget(battler, BATTLE_PARTNER(battler));
                     canSelectTarget = 2;
                 }
             }
