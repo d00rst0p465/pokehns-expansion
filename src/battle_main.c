@@ -2925,7 +2925,11 @@ bool32 ShouldHideBattler(enum BattlerId battler)
 {
     SpriteCallback callback;
 
-    if (!IsBattlerAlive(battler) || !gBattleSpritesDataPtr->healthBoxesData[battler].healthboxIsBouncing)
+    // No IsBattlerAlive() check: a battler that is not alive is never shown as a
+    // target, so it is never bouncing with a show callback. On the joiner of a
+    // link battle gBattleMons[] is empty and IsBattlerAlive() is always FALSE,
+    // which left the targets flashing after pressing B.
+    if (!gBattleSpritesDataPtr->healthBoxesData[battler].healthboxIsBouncing)
         return FALSE;
 
     callback = gSprites[gBattlerSpriteIds[battler]].callback;

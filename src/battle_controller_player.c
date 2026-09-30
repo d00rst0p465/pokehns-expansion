@@ -646,13 +646,31 @@ void HandleInputShowTargets(enum BattlerId battler)
     }
 }
 
-static void TryShowAsTarget(enum BattlerId attacker, enum BattlerId battler)
+// Whether `battler` is alive, according to the mask the battle master sent with
+// the "choose move" data. On the joiner of a link battle gBattleMons[] is empty,
+// so IsBattlerAlive() is always FALSE there and must not be used for this.
+static bool32 IsTargetAlive(enum BattlerId attacker, enum BattlerId battler)
 {
-    // Use the alive mask sent by the battle master: on the joiner of a link
-    // battle gBattleMons[] is empty, so IsBattlerAlive() is always FALSE there.
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[attacker][4]);
 
-    if (battler < gBattlersCount && (moveInfo->aliveBattlers & (1u << battler)))
+    return battler < gBattlersCount && (moveInfo->aliveBattlers & (1u << battler));
+}
+
+static u32 CountAliveTargetsExcept(enum BattlerId attacker, enum BattlerId except)
+{
+    u32 count = 0;
+
+    for (enum BattlerId i = 0; i < gBattlersCount; i++)
+    {
+        if (i != except && IsTargetAlive(attacker, i))
+            count++;
+    }
+    return count;
+}
+
+static void TryShowAsTarget(enum BattlerId attacker, enum BattlerId battler)
+{
+    if (IsTargetAlive(attacker, battler))
     {
         DoBounceEffect(battler, BOUNCE_HEALTHBOX, 15, 1);
         gSprites[gBattlerSpriteIds[battler]].callback = SpriteCB_ShowAsMoveTarget;
@@ -720,14 +738,14 @@ void HandleInputChooseMove(enum BattlerId battler)
         {
             if (!CanSelectBattler(moveTarget))
                 canSelectTarget = 1; // either selected or user
-            if (moveTarget == TARGET_USER_OR_ALLY && IsBattlerAlive(BATTLE_PARTNER(battler)))
+            if (moveTarget == TARGET_USER_OR_ALLY && IsTargetAlive(battler, BATTLE_PARTNER(battler)))
                 canSelectTarget = 1;
 
             if (moveInfo->currentPp[gMoveSelectionCursor[battler]] == 0)
             {
                 canSelectTarget = 0;
             }
-            else if (isUserOrAlly && CountAliveMonsInBattle(BATTLE_ALIVE_EXCEPT_BATTLER, battler) <= 1)
+            else if (isUserOrAlly && CountAliveTargetsExcept(battler, battler) <= 1)
             {
                 gMultiUsePlayerCursor = GetDefaultMoveTarget(battler);
                 canSelectTarget = 0;
@@ -2451,9 +2469,9 @@ static u32 CheckTargetTypeEffectiveness(enum BattlerId battler)
     {
         enum BattlerId partnerFoe = BATTLE_PARTNER(battlerFoe);
         u32 partnerFoeEffectiveness = CheckTypeEffectiveness(battler, partnerFoe);
-        if (!IsBattlerAlive(battlerFoe))
+        if (!IsTargetAlive(battler, battlerFoe))
             return partnerFoeEffectiveness;
-        if (IsBattlerAlive(battlerFoe) && IsBattlerAlive(partnerFoe)
+        if (IsTargetAlive(battler, battlerFoe) && IsTargetAlive(battler, partnerFoe)
          && partnerFoeEffectiveness > foeEffectiveness)
             return partnerFoeEffectiveness;
     }
